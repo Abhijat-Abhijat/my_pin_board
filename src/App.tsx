@@ -21,7 +21,7 @@ const App = () => {
           {
             id: 1,
             text: "To edit the note click on it . To save just press enter",
-            x: 320,
+            x: 120,
             y: 120,
             pinned: false,
           },
