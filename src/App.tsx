@@ -3,9 +3,17 @@ import { X, Pin, Save, BadgePlus, Image } from "lucide-react";
 import "./App.css";
 
 const App = () => {
+  interface Note {
+    id: number;
+    text: string;
+    x: number;
+    y: number;
+    pinned: boolean;
+    image?: string;
+  }
   // use-states
-  const [editingNote, setEditingNote] = useState(null);
-  const [notes, setNotes] = useState(() => {
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [notes, setNotes] = useState<Note[]>(() => {
     const savedNotes = localStorage.getItem("notes");
     return savedNotes
       ? JSON.parse(savedNotes)
@@ -26,17 +34,17 @@ const App = () => {
   }, [notes]);
 
   // functions for drag and drop
-  const handleDragStart = (e, id) => {
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: number) => {
     if (notes.find((note) => note.id === id && note.pinned)) {
       e.preventDefault();
       return;
     }
-    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.setData("text/plain", id.toString());
   };
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const draggedId = e.dataTransfer.getData("text/plain");
 
@@ -68,35 +76,62 @@ const App = () => {
     setNotes([...notes, newNote]);
   };
   // functions for deleting
-  const deleteNote = (id) => {
+  const deleteNote = (id: number) => {
     const updatedNotes = notes.filter((note) => note.id !== id);
     setNotes(updatedNotes);
   };
 
   // functions for editing
-  const handleTextClick = (note) => {
-    setEditingNote({ ...note });
+  const handleTextClick = (note: Note) => {
+    const {
+      id = 0,
+      text = "",
+      x = 0,
+      y = 0,
+      pinned = false,
+      image = "",
+    } = note;
+
+    setEditingNote({
+      id,
+      text,
+      x,
+      y,
+      pinned,
+      image,
+    });
   };
 
-  const handleInputChange = (e) => {
-    setEditingNote({ ...editingNote, text: e.target.value });
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
+    if (editingNote) {
+      setEditingNote({
+        ...editingNote,
+        text: e.target.value,
+        id: editingNote.id || 0,
+      });
+    }
   };
 
   const saveChanges = () => {
-    const updatedNotes = notes.map((note) =>
-      note.id === editingNote.id ? editingNote : note
-    );
-    setNotes(updatedNotes);
-    setEditingNote(null);
+    if (editingNote) {
+      const updatedNotes = notes.map((note) =>
+        note.id === editingNote.id ? editingNote : note
+      );
+      setNotes(updatedNotes);
+      setEditingNote(null);
+    }
   };
-  const handleKeyPress = (e) => {
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter") {
       saveChanges();
     }
   };
 
   // functions for pinning
-  const togglePin = (id) => {
+  const togglePin = (id: number) => {
     const updatedNotes = notes.map((note) =>
       note.id === id ? { ...note, pinned: !note.pinned } : note
     );
@@ -104,20 +139,23 @@ const App = () => {
   };
 
   // functions for uploading images
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = function (event) {
-        const newNoteId = notes.length + 1;
-        const newNote = {
-          id: newNoteId,
-          image: event.target.result,
-          x: 150,
-          y: 150,
-          pinned: false,
-        };
-        setNotes([...notes, newNote]);
+        if (event.target?.result) {
+          const newNoteId = notes.length + 1;
+          const newNote: Note = {
+            id: newNoteId,
+            text: "Uploaded Image",
+            image: event.target.result as string,
+            x: 150,
+            y: 150,
+            pinned: false,
+          };
+          setNotes([...notes, newNote]);
+        }
       };
       reader.readAsDataURL(file);
     }
