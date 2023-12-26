@@ -183,6 +183,7 @@ const App = () => {
             left: note.x + "px",
             backgroundColor: note.pinned ? "lightblue" : "yellow",
             cursor: note.pinned ? "default" : "grab",
+            zIndex: note.pinned ? 2 : 1,
           }}
         >
           {note.image && <img src={note.image} alt="note" />}
